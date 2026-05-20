@@ -21,12 +21,9 @@ SAMPLE_CONFIG = """\
 quality: auto  # fast | precise | auto
 
 apis:
-  google_document_ai:
-    project_id: ""
-    location: "us"
-    processor_id: ""
-  aws_textract:
-    region: "us-east-1"
+  gemini:
+    api_key: ""
+    model: "gemini-3-flash-preview"
 
 spreadsheet:
   max_cell_len: 120
@@ -39,15 +36,9 @@ output:
 
 
 @dataclass
-class GoogleDocAIConfig:
-    project_id: str = ""
-    location: str = "us"
-    processor_id: str = ""
-
-
-@dataclass
-class AWSTextractConfig:
-    region: str = ""
+class GeminiConfig:
+    api_key: str = ""
+    model: str = "gemini-3-flash-preview"
 
 
 @dataclass
@@ -61,20 +52,13 @@ class SpreadsheetConfig:
 @dataclass
 class Config:
     quality: str = "auto"
-    google_document_ai: GoogleDocAIConfig = field(default_factory=GoogleDocAIConfig)
-    aws_textract: AWSTextractConfig = field(default_factory=AWSTextractConfig)
+    gemini: GeminiConfig = field(default_factory=GeminiConfig)
     spreadsheet: SpreadsheetConfig = field(default_factory=SpreadsheetConfig)
     output_dir: Optional[Path] = None
     verbose: bool = False
 
-    def has_google_docai(self) -> bool:
-        return bool(
-            self.google_document_ai.project_id
-            and self.google_document_ai.processor_id
-        )
-
-    def has_aws_textract(self) -> bool:
-        return bool(self.aws_textract.region)
+    def has_gemini(self) -> bool:
+        return bool(self.gemini.api_key)
 
 
 def _merge(base: dict, override: dict) -> dict:
@@ -95,15 +79,10 @@ def _build(data: dict) -> Config:
         config.verbose = bool(data["verbose"])
 
     apis = data.get("apis", {})
-    if gdai := apis.get("google_document_ai", {}):
-        config.google_document_ai = GoogleDocAIConfig(
-            project_id=str(gdai.get("project_id", "")),
-            location=str(gdai.get("location", "us")),
-            processor_id=str(gdai.get("processor_id", "")),
-        )
-    if textract := apis.get("aws_textract", {}):
-        config.aws_textract = AWSTextractConfig(
-            region=str(textract.get("region", "us-east-1")),
+    if gemini := (apis.get("gemini") or {}):
+        config.gemini = GeminiConfig(
+            api_key=str(gemini.get("api_key", "")),
+            model=str(gemini.get("model", "gemini-3-flash-preview")),
         )
 
     if ss := data.get("spreadsheet", {}):
@@ -152,8 +131,8 @@ def init_config() -> None:
 def show_config() -> None:
     config = load_config()
     print(f"quality          : {config.quality}")
-    print(f"google_docai     : {'configured' if config.has_google_docai() else 'not configured'}")
-    print(f"aws_textract     : {'configured' if config.has_aws_textract() else 'not configured'}")
+    print(f"gemini           : {'configured' if config.has_gemini() else 'not configured'}")
+    print(f"gemini_model     : {config.gemini.model}")
     print(f"max_cell_len     : {config.spreadsheet.max_cell_len}")
     print(f"header_rows      : {config.spreadsheet.header_rows}")
     print(f"skip_empty_sheets: {config.spreadsheet.skip_empty_sheets}")

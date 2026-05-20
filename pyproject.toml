@@ -10,7 +10,6 @@ description = "Convert any document to Markdown"
 requires-python = ">=3.10"
 dependencies = [
     "docling",
-    "marker-pdf",
     "markitdown",
     "pandas>=1.5",
     "openpyxl>=3.0",
@@ -23,8 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 cloud = [
-    "google-cloud-documentai>=2.0",
-    "boto3>=1.26",
+    "google-generativeai>=0.8",
 ]
 dev = [
     "pytest>=7.0",

@@ -49,24 +49,23 @@ def test_load_config_cli_overrides_yaml(tmp_path, monkeypatch):
     assert config.quality == "fast"
 
 
-def test_has_google_docai_false_when_empty():
+def test_has_gemini_false_when_empty():
     config = load_config()
-    assert config.has_google_docai() is False
+    assert config.has_gemini() is False
 
 
-def test_has_google_docai_true_when_configured(tmp_path, monkeypatch):
+def test_has_gemini_true_when_configured(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(tmp_path)
     yaml_content = """
 apis:
-  google_document_ai:
-    project_id: "my-project"
-    location: "us"
-    processor_id: "abc123"
+  gemini:
+    api_key: "my-api-key"
+    model: "gemini-3-flash-preview"
 """
     (tmp_path / ".docconv.yaml").write_text(yaml_content)
     config = load_config()
-    assert config.has_google_docai() is True
+    assert config.has_gemini() is True
 
 
 def test_init_config_creates_file(tmp_path, monkeypatch):
