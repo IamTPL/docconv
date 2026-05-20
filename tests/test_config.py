@@ -49,7 +49,9 @@ def test_load_config_cli_overrides_yaml(tmp_path, monkeypatch):
     assert config.quality == "fast"
 
 
-def test_has_gemini_false_when_empty():
+def test_has_gemini_false_when_empty(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
     config = load_config()
     assert config.has_gemini() is False
 
@@ -68,16 +70,32 @@ apis:
     assert config.has_gemini() is True
 
 
-def test_init_config_creates_file(tmp_path, monkeypatch):
-    monkeypatch.setenv("HOME", str(tmp_path))
-    from docconv.config import init_config, GLOBAL_CONFIG_PATH
+def test_init_config_creates_file_in_cwd(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    from docconv.config import init_config
     init_config()
     assert (tmp_path / ".docconv.yaml").exists()
 
 
 def test_init_config_does_not_overwrite_existing(tmp_path, monkeypatch, capsys):
-    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
     (tmp_path / ".docconv.yaml").write_text("quality: fast\n")
     from docconv.config import init_config
     init_config()
     assert (tmp_path / ".docconv.yaml").read_text() == "quality: fast\n"
+
+
+def test_init_config_appends_to_gitignore(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".gitignore").write_text("__pycache__/\n")
+    from docconv.config import init_config
+    init_config()
+    assert ".docconv.yaml" in (tmp_path / ".gitignore").read_text()
+
+
+def test_init_config_skips_gitignore_when_not_git_repo(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    from docconv.config import init_config
+    init_config()
+    assert not (tmp_path / ".gitignore").exists()

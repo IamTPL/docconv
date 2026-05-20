@@ -19,7 +19,9 @@ def test_cannot_handle_docx(tmp_path, converter):
     assert converter.can_handle(tmp_path / "f.docx") is False
 
 
-def test_raises_when_no_api_key(scanned_pdf, converter):
+def test_raises_when_no_api_key(scanned_pdf, converter, tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
     config = load_config()
     assert not config.has_gemini()
     with pytest.raises(RuntimeError, match="Gemini API key"):
@@ -33,12 +35,12 @@ def test_calls_gemini_api(scanned_pdf, converter):
     mock_response = MagicMock()
     mock_response.text = "# Extracted from scan\n\nSome text."
 
-    with patch("google.generativeai.GenerativeModel") as MockModel:
-        MockModel.return_value.generate_content.return_value = mock_response
+    with patch("google.genai.Client") as MockClient:
+        MockClient.return_value.models.generate_content.return_value = mock_response
         result = converter.convert(scanned_pdf, config)
 
     assert "Extracted from scan" in result
-    MockModel.return_value.generate_content.assert_called_once()
+    MockClient.return_value.models.generate_content.assert_called_once()
 
 
 def test_does_not_write_files(scanned_pdf, converter, tmp_path):
@@ -49,8 +51,8 @@ def test_does_not_write_files(scanned_pdf, converter, tmp_path):
     mock_response = MagicMock()
     mock_response.text = "# Test"
 
-    with patch("google.generativeai.GenerativeModel") as MockModel:
-        MockModel.return_value.generate_content.return_value = mock_response
+    with patch("google.genai.Client") as MockClient:
+        MockClient.return_value.models.generate_content.return_value = mock_response
         converter.convert(scanned_pdf, config)
 
     after = set(tmp_path.iterdir())
@@ -60,13 +62,14 @@ def test_does_not_write_files(scanned_pdf, converter, tmp_path):
 def test_passes_model_name_from_config(scanned_pdf, converter):
     config = load_config()
     config.gemini.api_key = "fake-key"
-    config.gemini.model = "gemini-3-flash-preview"
+    config.gemini.model = "gemini-2.5-flash"
 
     mock_response = MagicMock()
     mock_response.text = "# Result"
 
-    with patch("google.generativeai.GenerativeModel") as MockModel:
-        MockModel.return_value.generate_content.return_value = mock_response
+    with patch("google.genai.Client") as MockClient:
+        MockClient.return_value.models.generate_content.return_value = mock_response
         converter.convert(scanned_pdf, config)
 
-    MockModel.assert_called_once_with("gemini-3-flash-preview")
+    call_kwargs = MockClient.return_value.models.generate_content.call_args
+    assert call_kwargs.kwargs["model"] == "gemini-2.5-flash"

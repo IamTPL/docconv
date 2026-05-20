@@ -23,7 +23,13 @@ quality: auto  # fast | precise | auto
 apis:
   gemini:
     api_key: ""
-    model: "gemini-3-flash-preview"
+    model: "gemini-2.5-flash-preview-05-20"
+    temperature: 0.1        # lower = more deterministic (recommended for OCR)
+    thinking_budget: 0      # 0 = disable thinking mode (faster, cheaper)
+    timeout: 120            # seconds before giving up on a single API request
+    max_retries: 2          # retries on timeout or 5xx server error (with backoff)
+    page_chunk_size: 20     # pages per API call for large PDFs (0 = send whole file at once)
+    inline_size_mb: 15.0    # files larger than this use File Upload API instead of inline bytes
 
 spreadsheet:
   max_cell_len: 120
@@ -39,6 +45,12 @@ output:
 class GeminiConfig:
     api_key: str = ""
     model: str = "gemini-3-flash-preview"
+    temperature: float = 0.1
+    thinking_budget: int = 0
+    timeout: int = 120       # seconds before giving up on a single request
+    max_retries: int = 2     # number of retries after a timeout or server error
+    page_chunk_size: int = 20  # pages per chunk for large PDFs (0 = no chunking)
+    inline_size_mb: float = 15.0  # files above this are uploaded via File API, not inline
 
 
 @dataclass
@@ -83,6 +95,12 @@ def _build(data: dict) -> Config:
         config.gemini = GeminiConfig(
             api_key=str(gemini.get("api_key", "")),
             model=str(gemini.get("model", "gemini-3-flash-preview")),
+            temperature=float(gemini.get("temperature", 0.1)),
+            thinking_budget=int(gemini.get("thinking_budget", 0)),
+            timeout=int(gemini.get("timeout", 120)),
+            max_retries=int(gemini.get("max_retries", 2)),
+            page_chunk_size=int(gemini.get("page_chunk_size", 20)),
+            inline_size_mb=float(gemini.get("inline_size_mb", 15.0)),
         )
 
     if ss := data.get("spreadsheet", {}):
@@ -119,13 +137,30 @@ def load_config(cli_overrides: Optional[dict] = None) -> Config:
     return _build(data)
 
 
-def init_config() -> None:
-    global_path = Path(os.environ.get("HOME", Path.home())) / ".docconv.yaml"
-    if global_path.exists():
-        print(f"Config already exists at {global_path}")
+def _ensure_gitignored(entry: str) -> None:
+    """Append `entry` to ./.gitignore if missing. No-op outside a git project."""
+    if not Path(".git").exists():
         return
-    global_path.write_text(SAMPLE_CONFIG)
-    print(f"[✓] Config created at {global_path}")
+    gitignore = Path(".gitignore")
+    lines = gitignore.read_text().splitlines() if gitignore.exists() else []
+    if entry in lines:
+        return
+    with gitignore.open("a", encoding="utf-8") as f:
+        if lines and lines[-1] != "":
+            f.write("\n")
+        f.write(entry + "\n")
+    print(f"[✓] Added '{entry}' to .gitignore")
+
+
+def init_config() -> None:
+    """Create .docconv.yaml in the current project directory."""
+    local_path = LOCAL_CONFIG_PATH.resolve()
+    if local_path.exists():
+        print(f"Config already exists at {local_path}")
+        return
+    local_path.write_text(SAMPLE_CONFIG)
+    print(f"[✓] Config created at {local_path}")
+    _ensure_gitignored(".docconv.yaml")
 
 
 def show_config() -> None:
@@ -133,6 +168,10 @@ def show_config() -> None:
     print(f"quality          : {config.quality}")
     print(f"gemini           : {'configured' if config.has_gemini() else 'not configured'}")
     print(f"gemini_model     : {config.gemini.model}")
+    print(f"gemini_temperature: {config.gemini.temperature}")
+    print(f"thinking_budget  : {config.gemini.thinking_budget}")
+    print(f"timeout          : {config.gemini.timeout}s")
+    print(f"max_retries      : {config.gemini.max_retries}")
     print(f"max_cell_len     : {config.spreadsheet.max_cell_len}")
     print(f"header_rows      : {config.spreadsheet.header_rows}")
     print(f"skip_empty_sheets: {config.spreadsheet.skip_empty_sheets}")

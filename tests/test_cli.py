@@ -48,13 +48,10 @@ def test_cli_converts_docx_to_md(simple_docx, tmp_path):
     assert "Hello World" in out.read_text()
 
 
-def test_cli_output_defaults_to_input_dir(csv_comma):
-    expected_md = csv_comma.with_suffix(".md")
-    if expected_md.exists():
-        expected_md.unlink()
+def test_cli_requires_output_flag(csv_comma):
     result = run_cli(str(csv_comma))
-    assert result.returncode == 0, result.stderr
-    assert expected_md.exists()
+    assert result.returncode != 0
+    assert "output" in result.stderr.lower()
 
 
 def test_cli_batch_dir(tmp_path):
@@ -67,13 +64,24 @@ def test_cli_batch_dir(tmp_path):
     assert (out_dir / "b.md").exists()
 
 
-def test_cli_init_config_creates_yaml(tmp_path):
-    import os
-    env = os.environ.copy()
-    env["HOME"] = str(tmp_path)
-    result = run_cli("--init-config", env=env)
-    assert result.returncode == 0
+def test_cli_init_config_creates_yaml_in_cwd(tmp_path):
+    result = subprocess.run(
+        [sys.executable, "-m", "docconv.cli", "--init-config"],
+        capture_output=True, text=True, cwd=str(tmp_path),
+    )
+    assert result.returncode == 0, result.stderr
     assert (tmp_path / ".docconv.yaml").exists()
+
+
+def test_cli_init_config_adds_gitignore_entry(tmp_path):
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".gitignore").write_text("__pycache__/\n")
+    result = subprocess.run(
+        [sys.executable, "-m", "docconv.cli", "--init-config"],
+        capture_output=True, text=True, cwd=str(tmp_path),
+    )
+    assert result.returncode == 0, result.stderr
+    assert ".docconv.yaml" in (tmp_path / ".gitignore").read_text()
 
 
 def test_cli_verbose_flag_accepted(csv_comma, tmp_path):

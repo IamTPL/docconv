@@ -8,3 +8,10 @@ dist/
 htmlcov/
 .pytest_cache/
 *.md.bak
+.env
+.env.*
+build/
+*.so
+*.pyd
+.DS_Store
+.docconv.yaml

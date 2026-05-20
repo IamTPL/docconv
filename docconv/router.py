@@ -20,11 +20,13 @@ _NON_PDF_CONVERTERS: list[BaseConverter] = [
 ]
 
 
-def route(path: Path) -> BaseConverter:
+def route(path: Path, force_scan: bool = False) -> BaseConverter:
     """Return the appropriate converter for the given file path."""
     suffix = path.suffix.lower()
 
     if suffix == ".pdf":
+        if force_scan:
+            return _PDF_SCAN_CONVERTER
         pdf_type = _detect_pdf_type(path)
         return _PDF_CONVERTER if pdf_type == "digital" else _PDF_SCAN_CONVERTER
 

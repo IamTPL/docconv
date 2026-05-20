@@ -13,28 +13,23 @@ from docconv.utils.postprocess import clean_markdown
 _SUPPORTED = {".pdf", ".xlsx", ".xls", ".xlsm", ".csv", ".tsv", ".docx", ".doc", ".odt"}
 
 
-def _resolve_output(input_path: Path, output_arg: str | None, config) -> Path:
-    if output_arg:
-        out = Path(output_arg)
-        if output_arg.endswith("/") or out.is_dir():
-            out.mkdir(parents=True, exist_ok=True)
-            return out / (input_path.stem + ".md")
-        return out
-    if config.output_dir:
-        config.output_dir.mkdir(parents=True, exist_ok=True)
-        return config.output_dir / (input_path.stem + ".md")
-    return input_path.with_suffix(".md")
+def _resolve_output(input_path: Path, output_arg: str, config) -> Path:
+    out = Path(output_arg)
+    if output_arg.endswith("/") or out.is_dir():
+        out.mkdir(parents=True, exist_ok=True)
+        return out / (input_path.stem + ".md")
+    return out
 
 
-def _convert_file(input_path: Path, output_arg: str | None, config) -> bool:
+def _convert_file(input_path: Path, output_arg: str, config, force_scan: bool = False) -> bool:
     if not input_path.exists():
         print(f"[ERROR] File not found: {input_path}", file=sys.stderr)
         return False
     output_path = _resolve_output(input_path, output_arg, config)
-    if config.verbose:
-        print(f"[•] Converting: {input_path}")
     try:
-        converter = route(input_path)
+        converter = route(input_path, force_scan=force_scan)
+        engine = type(converter).__name__.replace("Converter", "")
+        print(f"[•] {input_path.name}  →  engine: {engine}")
         markdown = converter.convert(input_path, config)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(clean_markdown(markdown), encoding="utf-8")
@@ -51,7 +46,7 @@ def _convert_file(input_path: Path, output_arg: str | None, config) -> bool:
         return False
 
 
-def _convert_dir(input_dir: Path, output_arg: str | None, config) -> None:
+def _convert_dir(input_dir: Path, output_arg: str, config, force_scan: bool = False) -> None:
     files = sorted(
         f for f in input_dir.iterdir()
         if f.is_file() and f.suffix.lower() in _SUPPORTED
@@ -59,15 +54,10 @@ def _convert_dir(input_dir: Path, output_arg: str | None, config) -> None:
     if not files:
         print(f"[!] No supported files in {input_dir}")
         return
-    # When output_arg is given for batch mode, treat it as a directory
-    if output_arg:
-        out_dir = Path(output_arg)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        # Pass as trailing-slash string so _resolve_output treats it as a dir
-        batch_output = str(out_dir) + "/"
-    else:
-        batch_output = None
-    ok = sum(_convert_file(f, batch_output, config) for f in files)
+    out_dir = Path(output_arg)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    batch_output = str(out_dir) + "/"
+    ok = sum(_convert_file(f, batch_output, config, force_scan=force_scan) for f in files)
     print(f"\nDone: {ok}/{len(files)} converted.")
 
 
@@ -77,9 +67,11 @@ def main() -> None:
         description="Convert documents (PDF/Excel/Word) to Markdown",
     )
     parser.add_argument("input", nargs="?", help="Input file or directory")
-    parser.add_argument("-o", "--output", metavar="PATH", help="Output file or directory")
+    parser.add_argument("-o", "--output", metavar="PATH", help="Output file (.md) or directory (required when converting)")
     parser.add_argument("--sheets", metavar="NAMES", help="Excel sheets, comma-separated")
     parser.add_argument("--header-rows", type=int, metavar="N", help="Number of header rows in Excel")
+    parser.add_argument("--force-scan", action="store_true", dest="force_scan",
+                        help="Force Gemini API (PDFScan engine) even for digital PDFs")
     parser.add_argument("--verbose", action="store_true", help="Show detailed progress")
     parser.add_argument("--init-config", action="store_true", dest="init_config", help="Create ~/.docconv.yaml")
     parser.add_argument("--show-config", action="store_true", dest="show_config", help="Print active configuration")
@@ -98,6 +90,10 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
 
+    if not args.output:
+        print("[ERROR] Output path is required. Use -o <file.md> or -o <directory/>", file=sys.stderr)
+        sys.exit(1)
+
     overrides: dict = {}
     if args.verbose:
         overrides["verbose"] = True
@@ -114,9 +110,9 @@ def main() -> None:
         sys.exit(1)
 
     if input_path.is_dir():
-        _convert_dir(input_path, args.output, config)
+        _convert_dir(input_path, args.output, config, force_scan=args.force_scan)
     else:
-        if not _convert_file(input_path, args.output, config):
+        if not _convert_file(input_path, args.output, config, force_scan=args.force_scan):
             sys.exit(1)
 
 
