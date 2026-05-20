@@ -8,6 +8,9 @@ from typing import Optional
 
 import yaml
 
+# Note: GLOBAL_CONFIG_PATH is resolved at import time using Path.home().
+# It reflects the home directory at module import, not dynamically.
+# Use load_config() and init_config() which read os.environ.get("HOME") at call time.
 GLOBAL_CONFIG_PATH = Path.home() / ".docconv.yaml"
 LOCAL_CONFIG_PATH = Path(".docconv.yaml")
 
@@ -44,7 +47,7 @@ class GoogleDocAIConfig:
 
 @dataclass
 class AWSTextractConfig:
-    region: str = "us-east-1"
+    region: str = ""
 
 
 @dataclass
