@@ -1,0 +1,10 @@
+# .gitignore
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+dist/
+.coverage
+htmlcov/
+.pytest_cache/
+*.md.bak

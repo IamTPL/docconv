@@ -1,0 +1,40 @@
+# pyproject.toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "docconv"
+version = "0.1.0"
+description = "Convert any document to Markdown"
+requires-python = ">=3.10"
+dependencies = [
+    "docling",
+    "marker-pdf",
+    "markitdown",
+    "pandas>=1.5",
+    "openpyxl>=3.0",
+    "xlrd>=2.0",
+    "chardet>=4.0",
+    "tabulate>=0.9",
+    "PyMuPDF>=1.23",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+cloud = [
+    "google-cloud-documentai>=2.0",
+    "boto3>=1.26",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "fpdf2>=2.7",
+    "python-docx>=1.0",
+]
+
+[project.scripts]
+docconv = "docconv.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["docconv"]
