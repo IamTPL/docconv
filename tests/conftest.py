@@ -66,3 +66,16 @@ def csv_utf16(tmp_path) -> Path:
     path = tmp_path / "data_utf16.csv"
     path.write_bytes("Name,Value\nAlpha,1\nBeta,2\n".encode("utf-16"))
     return path
+
+
+@pytest.fixture
+def simple_docx(tmp_path) -> Path:
+    """Simple docx with heading and paragraph."""
+    from docx import Document
+    path = tmp_path / "letter.docx"
+    doc = Document()
+    doc.add_heading("Hello World", level=1)
+    doc.add_paragraph("This is a test document.")
+    doc.add_paragraph("Second paragraph with more content.")
+    doc.save(str(path))
+    return path
