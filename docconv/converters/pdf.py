@@ -1,0 +1,32 @@
+# docconv/converters/pdf.py
+from __future__ import annotations
+import warnings
+from pathlib import Path
+import fitz  # PyMuPDF
+from docconv.config import Config
+from docconv.converters.base import BaseConverter
+
+warnings.filterwarnings("ignore")
+
+_TEXT_THRESHOLD = 100  # avg chars/page below this → scanned
+
+
+def _detect_pdf_type(path: Path) -> str:
+    """Return 'digital' or 'scanned' based on extractable text in first 3 pages."""
+    doc = fitz.open(str(path))
+    pages = min(3, len(doc))
+    if pages == 0:
+        return "scanned"
+    total = sum(
+        len(doc[i].get_text().replace(" ", "").replace("\n", ""))
+        for i in range(pages)
+    )
+    return "digital" if (total / pages) > _TEXT_THRESHOLD else "scanned"
+
+
+class PDFConverter(BaseConverter):
+    def can_handle(self, path: Path) -> bool:
+        return path.suffix.lower() == ".pdf"
+
+    def convert(self, path: Path, config: Config) -> str:
+        raise NotImplementedError
