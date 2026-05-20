@@ -93,3 +93,16 @@ def digital_pdf(tmp_path) -> Path:
         pdf.cell(0, 10, f"Line {i}: This is digital text content for testing.", ln=True)
     pdf.output(str(path))
     return path
+
+
+@pytest.fixture
+def scanned_pdf(tmp_path) -> Path:
+    """PDF with no text layer (image-only, simulates a scan)."""
+    from fpdf import FPDF
+    path = tmp_path / "scanned.pdf"
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_fill_color(255, 255, 255)
+    pdf.rect(0, 0, 210, 297, "F")
+    pdf.output(str(path))
+    return path
