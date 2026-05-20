@@ -25,8 +25,13 @@ def _detect_pdf_type(path: Path) -> str:
 
 
 class PDFConverter(BaseConverter):
+    """Converts digital PDFs (text layer present) using Docling."""
+
     def can_handle(self, path: Path) -> bool:
         return path.suffix.lower() == ".pdf"
 
     def convert(self, path: Path, config: Config) -> str:
-        raise NotImplementedError
+        from docling.document_converter import DocumentConverter
+        converter = DocumentConverter()
+        result = converter.convert(str(path))
+        return result.document.export_to_markdown()

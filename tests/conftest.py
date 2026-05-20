@@ -79,3 +79,17 @@ def simple_docx(tmp_path) -> Path:
     doc.add_paragraph("Second paragraph with more content.")
     doc.save(str(path))
     return path
+
+
+@pytest.fixture
+def digital_pdf(tmp_path) -> Path:
+    """PDF with embedded text layer (digital, not scanned)."""
+    from fpdf import FPDF
+    path = tmp_path / "digital.pdf"
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", size=12)
+    for i in range(20):
+        pdf.cell(0, 10, f"Line {i}: This is digital text content for testing.", ln=True)
+    pdf.output(str(path))
+    return path
