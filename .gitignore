@@ -15,3 +15,5 @@ build/
 *.pyd
 .DS_Store
 .docconv.yaml
+input
+output

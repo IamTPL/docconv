@@ -23,12 +23,12 @@ quality: auto  # fast | precise | auto
 apis:
   gemini:
     api_key: ""
-    model: "gemini-2.5-flash"
+    model: "gemini-3-flash-preview"
     temperature: 0.1        # lower = more deterministic (recommended for OCR)
     thinking_budget: 0      # 0 = disable thinking mode (faster, cheaper)
-    timeout: 120            # seconds before giving up on a single API request
+    timeout: 240            # seconds before giving up on a single API request
     max_retries: 2          # retries on timeout or 5xx server error (with backoff)
-    page_chunk_size: 20     # pages per API call for large PDFs (0 = send whole file at once)
+    page_chunk_size: 2      # pages per API call for large PDFs (0 = send whole file at once)
     inline_size_mb: 15.0    # files larger than this use File Upload API instead of inline bytes
 
 spreadsheet:
