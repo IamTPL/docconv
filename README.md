@@ -4,13 +4,13 @@ Convert any document to Markdown using the best engine for each file type.
 
 ## Supported formats
 
-| Format | Engine |
-|---|---|
-| `.pdf` (digital — text layer) | Docling |
-| `.pdf` (scanned — image-only) | Google Gemini API |
-| `.xlsx`, `.xls`, `.xlsm`, `.csv`, `.tsv` | pandas + openpyxl |
-| `.docx` | MarkItDown |
-| `.doc`, `.odt` | LibreOffice → MarkItDown |
+| Format                                   | Engine                   |
+| ---------------------------------------- | ------------------------ |
+| `.pdf` (digital — text layer)            | Docling                  |
+| `.pdf` (scanned — image-only)            | Google Gemini API        |
+| `.xlsx`, `.xls`, `.xlsm`, `.csv`, `.tsv` | pandas + openpyxl        |
+| `.docx`                                  | MarkItDown               |
+| `.doc`, `.odt`                           | LibreOffice → MarkItDown |
 
 ---
 
@@ -42,6 +42,7 @@ bash install.sh
 ```
 
 What it does:
+
 1. Creates `.venv/` (Python virtual environment)
 2. Runs `pip install -e .` — installs docconv and all dependencies including the Gemini client
 3. Installs LibreOffice via `apt` / `brew` (needed for `.doc` / `.odt` files)
@@ -65,7 +66,7 @@ If you will convert PDFs that are image-only / scanned, open `.docconv.yaml` and
 ```yaml
 apis:
   gemini:
-    api_key: "paste-your-key-here"
+    api_key: 'paste-your-key-here'
 ```
 
 Get a key at <https://aistudio.google.com/apikey>. If you only convert digital PDFs / DOCX / XLSX / CSV, you can ignore this — the library is installed but unused.
@@ -119,6 +120,7 @@ docconv report.pdf -o report.md --force-scan
 ```
 
 The tool reads the first 3 pages with PyMuPDF and counts extractable characters:
+
 - **> 100 chars/page on average** → PDF has a text layer → converted with **Docling** (fast, no API key needed)
 - **≤ 100 chars/page** → PDF is image-only / scanned → converted with **Gemini API** (requires `api_key` in `.docconv.yaml`)
 
@@ -165,18 +167,18 @@ docconv --show-config   # print active configuration
 `docconv --init-config` creates `.docconv.yaml` in the current directory. The file is automatically added to `.gitignore` so your API keys are never committed.
 
 ```yaml
-quality: auto             # fast | precise | auto
+quality: auto # fast | precise | auto
 
 apis:
   gemini:
-    api_key: ""
-    model: "gemini-2.5-flash-preview-05-20"
-    temperature: 0.1        # lower = more deterministic (recommended for OCR)
-    thinking_budget: 0      # 0 = disable thinking mode (faster, cheaper)
-    timeout: 120            # seconds before giving up on a single API request
-    max_retries: 2          # retries on timeout or 5xx server error (with backoff)
-    page_chunk_size: 20     # pages per API call for large PDFs (0 = send whole file at once)
-    inline_size_mb: 15.0    # files larger than this use File Upload API instead of inline bytes
+    api_key: ''
+    model: 'gemini-2.5-flash'
+    temperature: 0.1 # lower = more deterministic (recommended for OCR)
+    thinking_budget: 0 # 0 = disable thinking mode (faster, cheaper)
+    timeout: 120 # seconds before giving up on a single API request
+    max_retries: 2 # retries on timeout or 5xx server error (with backoff)
+    page_chunk_size: 20 # pages per API call for large PDFs (0 = send whole file at once)
+    inline_size_mb: 15.0 # files larger than this use File Upload API instead of inline bytes
 
 spreadsheet:
   max_cell_len: 120

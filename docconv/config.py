@@ -23,7 +23,7 @@ quality: auto  # fast | precise | auto
 apis:
   gemini:
     api_key: ""
-    model: "gemini-2.5-flash-preview-05-20"
+    model: "gemini-2.5-flash"
     temperature: 0.1        # lower = more deterministic (recommended for OCR)
     thinking_budget: 0      # 0 = disable thinking mode (faster, cheaper)
     timeout: 120            # seconds before giving up on a single API request

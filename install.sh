@@ -36,8 +36,17 @@ fi
 source .venv/bin/activate
 
 # ---------- 2. Python dependencies ----------
-echo "==> [2/4] Installing Python dependencies (pip install -e .)"
+echo "==> [2/4] Installing Python dependencies"
 pip install --upgrade pip >/dev/null
+
+read -rp "    Do you have an NVIDIA GPU? [y/N] " has_gpu
+if [[ "$has_gpu" == "y" || "$has_gpu" == "Y" ]]; then
+    echo "    GPU detected — installing default PyTorch (with CUDA support)"
+else
+    echo "    No GPU — installing CPU-only PyTorch (~200 MB instead of ~2-3 GB)"
+    pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+fi
+
 pip install -e .
 
 # ---------- 3. LibreOffice (system package, optional but recommended) ----------
